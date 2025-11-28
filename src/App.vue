@@ -1,160 +1,151 @@
-<script setup lang="ts">
-import { ref } from "vue";
-import { invoke } from "@tauri-apps/api/core";
-
-const greetMsg = ref("");
-const name = ref("");
-
-async function greet() {
-  // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
-  greetMsg.value = await invoke("greet", { name: name.value });
-}
-</script>
-
 <template>
-  <main class="container">
-    <h1>Welcome to Tauri + Vue</h1>
+  
+  <div class="min-h-screen bg-[#212121] text-gray-200 p-6">
+    <h1 class="text-3xl font-bold mb-6 text-blue-400">Windows Services</h1>
 
-    <div class="row">
-      <a href="https://vite.dev" target="_blank">
-        <img src="/vite.svg" class="logo vite" alt="Vite logo" />
-      </a>
-      <a href="https://tauri.app" target="_blank">
-        <img src="/tauri.svg" class="logo tauri" alt="Tauri logo" />
-      </a>
-      <a href="https://vuejs.org/" target="_blank">
-        <img src="./assets/vue.svg" class="logo vue" alt="Vue logo" />
-      </a>
+    <div class="flex items-center gap-4 mb-6">
+      <button
+        @click="loadServices"
+        class="px-4 py-2 rounded bg-blue-600 hover:bg-blue-700 transition"
+      >
+        Refresh Services
+      </button>
+
+      <input
+        v-model="searchQuery"
+        type="text"
+        placeholder="Search services..."
+        class="flex-1 px-4 py-2 bg-[#1a1a1a] border border-gray-700 rounded focus:border-blue-500 focus:outline-none"
+      />
     </div>
-    <p>Click on the Tauri, Vite, and Vue logos to learn more.</p>
 
-    <form class="row" @submit.prevent="greet">
-      <input id="greet-input" v-model="name" placeholder="Enter a name..." />
-      <button type="submit">Greet</button>
-    </form>
-    <p>{{ greetMsg }}</p>
-  </main>
+    <div v-if="loading" class="text-gray-400">Loading...</div>
+    <div v-if="error" class="mb-4 p-4 bg-red-900/50 border border-red-600 rounded">
+      {{ error }}
+      <button @click="error = null" class="ml-4 underline">Dismiss</button>
+    </div>
+
+    <div class="mb-4 text-gray-400 text-sm">
+      Showing {{ filteredServices.length }} of {{ services.length }} services
+    </div>
+
+    <div class="grid gap-6">
+      <ServiceCard
+        v-for="service in filteredServices"
+        :key="service.name"
+        :service="service"
+        @start="start"
+        @stop="stop"
+        @pause="pause"
+        @resume="resume"
+        @searchServiceSafety="searchServiceSafety"
+      />
+    </div>
+
+    <div v-if="filteredServices.length === 0 && !loading" class="text-center text-gray-400 mt-8">
+      No services found matching "{{ searchQuery }}"
+    </div>
+  </div>
 </template>
 
-<style scoped>
-.logo.vite:hover {
-  filter: drop-shadow(0 0 2em #747bff);
+<script setup lang="ts">
+import { ref, onMounted, computed } from "vue";
+import { invoke } from "@tauri-apps/api/core";
+import ServiceCard from "./components/ServiceCard.vue";
+import { open } from "@tauri-apps/plugin-shell";
+
+
+
+interface ServiceInfo {
+  name: string;
+  display_name: string;
+  status: string;
+  service_type: string;
+  can_interact: boolean;
 }
 
-.logo.vue:hover {
-  filter: drop-shadow(0 0 2em #249b73);
-}
+const services = ref<ServiceInfo[]>([]);
+const loading = ref(false);
+// Reactive state: String to store error messages (null if no error)
+const error = ref<string | null>(null);
+// Reactive state: String to store the user's search query
+const searchQuery = ref('');
 
-</style>
-<style>
-:root {
-  font-family: Inter, Avenir, Helvetica, Arial, sans-serif;
-  font-size: 16px;
-  line-height: 24px;
-  font-weight: 400;
 
-  color: #0f0f0f;
-  background-color: #f6f6f6;
+const filteredServices = computed(() => {
+  if(!searchQuery.value) return services.value;
+  const query = searchQuery.value.toLowerCase();
+  
+  return services.value.filter(service => 
+    // filter the services array for ones that match the name or display name queried 
+    service.name.toLowerCase().includes(query) || 
+    service.display_name.toLowerCase().includes(query)
+  )
+})
 
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  -webkit-text-size-adjust: 100%;
-}
 
-.container {
-  margin: 0;
-  padding-top: 10vh;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  text-align: center;
-}
 
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: 0.75s;
-}
-
-.logo.tauri:hover {
-  filter: drop-shadow(0 0 2em #24c8db);
-}
-
-.row {
-  display: flex;
-  justify-content: center;
-}
-
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
-}
-
-a:hover {
-  color: #535bf2;
-}
-
-h1 {
-  text-align: center;
-}
-
-input,
-button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
-  font-family: inherit;
-  color: #0f0f0f;
-  background-color: #ffffff;
-  transition: border-color 0.25s;
-  box-shadow: 0 2px 2px rgba(0, 0, 0, 0.2);
-}
-
-button {
-  cursor: pointer;
-}
-
-button:hover {
-  border-color: #396cd8;
-}
-button:active {
-  border-color: #396cd8;
-  background-color: #e8e8e8;
-}
-
-input,
-button {
-  outline: none;
-}
-
-#greet-input {
-  margin-right: 5px;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    color: #f6f6f6;
-    background-color: #2f2f2f;
-  }
-
-  a:hover {
-    color: #24c8db;
-  }
-
-  input,
-  button {
-    color: #ffffff;
-    background-color: #0f0f0f98;
-  }
-  button:active {
-    background-color: #0f0f0f69;
+async function loadServices() {
+  loading.value = true;
+  error.value = null;
+  try {
+    services.value = await invoke("enumerate_services");
+    console.log(services.value)
+  } catch (e) {
+    error.value = `failed loading services: ${e}`;
+  }finally {
+    loading.value = false;
   }
 }
 
-</style>
+async function start(name: string) {
+  error.value = null;
+  try{
+    await invoke("start_service", { serviceName: name });
+    await loadServices();
+  } catch (e) {
+    error.value = `problem starting ${name}: ${e}`;
+  }
+  
+}
+
+async function stop(name: string) {
+  error.value = null;
+  try {
+    await invoke("stop_service", { serviceName: name });
+    await loadServices();
+  } catch (e) {
+    error.value = `problem stoping ${name}: ${e}`;
+  }
+  
+}
+
+async function pause(name: string) {
+  error.value = null;
+  try {
+    await invoke("pause_service", { serviceName: name });
+    await loadServices();
+  } catch(e) {
+    error.value = `problem pausing ${name}: ${e}`;
+  }
+
+}
+
+async function resume(name: string) {
+  error.value = null;
+  try {
+    await invoke("resume_service", { serviceName: name });
+    await loadServices();
+  } catch (e) {
+    error.value = `problem resuming ${name}: ${e}`
+  }
+  
+}
+
+async function searchServiceSafety(name: string) {
+  const url =(`https://google.com/search?q=${encodeURIComponent(`is ${name} windows service safe to stop`)}`); 
+  await open(url);
+}
+
+onMounted(loadServices);
+</script>
