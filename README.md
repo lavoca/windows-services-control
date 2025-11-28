@@ -1,7 +1,40 @@
-# Tauri + Vue + TypeScript
+# Windows Service Manager
 
-This template should help get you started developing with Vue 3 and TypeScript in Vite. The template uses Vue 3 `<script setup>` SFCs, check out the [script setup docs](https://v3.vuejs.org/api/sfc-script-setup.html#sfc-script-setup) to learn more.
+A desktop app for managing Windows services, built with Rust and Tauri.
 
-## Recommended IDE Setup
+![Screenshot](screenshots/main1.png)
+![Screenshot](screenshots/main.png)
 
-- [VS Code](https://code.visualstudio.com/) + [Vue - Official](https://marketplace.visualstudio.com/items?itemName=Vue.volar) + [Tauri](https://marketplace.visualstudio.com/items?itemName=tauri-apps.tauri-vscode) + [rust-analyzer](https://marketplace.visualstudio.com/items?itemName=rust-lang.rust-analyzer)
+## Features
+
+- Browse and search all Windows services
+- Start, stop, pause, and resume services
+- Safety: Driver services are read-only to prevent crashes
+- Quick Google search for service information
+
+## Tech Stack
+
+- **Backend**: Rust + Windows API
+- **Frontend**: Vue 3 + TypeScript + Tailwind
+- **Framework**: Tauri 2
+
+## Development
+```bash
+git clone https://github.com/yourusername/windows-service-manager
+cd windows-service-manager
+pnpm install
+pnpm tauri dev
+```
+
+Requires: Rust, Node.js 18+, Windows 10/11
+
+## What I Learned
+
+- Windows Service Control Manager API
+- FFI and unsafe Rust
+- RAII pattern with Drop trait
+- Tauri desktop app development
+
+## License
+
+MIT
