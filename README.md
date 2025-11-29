@@ -2,8 +2,8 @@
 
 A desktop app for managing Windows services, built with Rust and Tauri.
 
-![Screenshot](screenshots/main1.png)
-![Screenshot](screenshots/main.png)
+![Screenshot](public/screenshots/main1.png)
+![Screenshot](public/screenshots/main.png)
 
 ## Features
 
